@@ -1,4 +1,4 @@
-// js/calls.js - SOLUCIÓN DEFINITIVA: position relative + CSS ultra-agresivo
+// js/calls.js - VERSIÓN ULTRA SIMPLIFICADA Y AGRESIVA
 
 import { VOX_CONFIG } from './config.js';
 import { sysLog } from './ui.js';
@@ -6,140 +6,76 @@ import { sysLog } from './ui.js';
 let currentCall = null;
 let isMicActive = true;
 let isCamActive = true;
-let pendingLocalVideo = false;
-let pendingRemoteVideo = false;
 
 export function setupCallHandlers() {
   const sdk = VoxImplant.getInstance();
 
-  // CRÍTICO: Asegurar que los contenedores tengan position relative
-  ensureContainersReady();
-
   sdk.on(VoxImplant.Events.IncomingCall, (e) => {
-    console.log('[CALLS] IncomingCall recibido', e);
+    console.log('[CALLS] ========== IncomingCall recibido ==========');
     sysLog('¡Llamada entrante detectada!');
     currentCall = e.call;
     handleCallEvents(currentCall);
   });
 
-  // Monitor para gestionar videos
-  setInterval(manageVideos, 300);
-}
-
-/**
- * CRÍTICO: Asegurar que los contenedores tengan el CSS correcto
- */
-function ensureContainersReady() {
-  const localContainer = document.getElementById('localVideoContainer');
-  const remoteContainer = document.getElementById('remoteVideoContainer');
-
-  if (localContainer) {
-    localContainer.style.position = 'relative';
-    localContainer.style.overflow = 'hidden';
-    console.log('[CALLS] ✅ localVideoContainer configurado con position: relative');
-  }
-
-  if (remoteContainer) {
-    remoteContainer.style.position = 'relative';
-    remoteContainer.style.overflow = 'hidden';
-    console.log('[CALLS] ✅ remoteVideoContainer configurado con position: relative');
-  }
-}
-
-/**
- * Busca y mueve videos huérfanos a sus contenedores correctos
- */
-function manageVideos() {
-  const allVideos = document.querySelectorAll('video');
-  const localContainer = document.getElementById('localVideoContainer');
-  const remoteContainer = document.getElementById('remoteVideoContainer');
-
-  if (!localContainer || !remoteContainer) return;
-
-  allVideos.forEach(video => {
-    const inLocal = localContainer.contains(video);
-    const inRemote = remoteContainer.contains(video);
-
-    // Si el video no está en ninguno de los dos contenedores, es huérfano
-    if (!inLocal && !inRemote) {
-      console.log('[CALLS] 🔍 Video huérfano detectado');
-      
-      // Decidir a dónde moverlo según qué está pendiente
-      if (pendingRemoteVideo) {
-        // Video remoto va al contenedor GRANDE (localVideoContainer)
-        console.log('[CALLS] 🎥 Moviendo video REMOTO a localVideoContainer (GRANDE)');
-        localContainer.innerHTML = '';
-        localContainer.appendChild(video);
-        forceVideoIntoContainer(video);
-        pendingRemoteVideo = false;
-        sysLog('🎥 Video remoto en pantalla grande');
-      } else if (pendingLocalVideo) {
-        // Video local va al contenedor PEQUEÑO (remoteVideoContainer)
-        console.log('[CALLS] 📷 Moviendo video LOCAL a remoteVideoContainer (PIP)');
-        remoteContainer.innerHTML = '';
-        remoteContainer.appendChild(video);
-        forceVideoIntoContainer(video);
-        pendingLocalVideo = false;
-        sysLog('📷 Video local en PIP');
-      }
-    }
-  });
-}
-
-/**
- * Fuerza el video a quedarse dentro del contenedor
- */
-function forceVideoIntoContainer(video) {
-  // CSS ULTRA AGRESIVO para mantener el video dentro
-  video.style.cssText = `
-    position: relative !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: cover !important;
-    background: #0f172a !important;
-    display: block !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    transform: none !important;
-  `;
-  
-  console.log('[CALLS] ✅ CSS ultra-agresivo aplicado al video');
-  console.log('[CALLS] Video parent:', video.parentElement?.id);
+  // Monitor continuo más agresivo
+  setInterval(relocateOrphanVideos, 200);
 }
 
 function handleCallEvents(call) {
   if (!call) return;
 
-  console.log('[CALLS] ========== handleCallEvents inicializado ==========');
+  console.log('[CALLS] handleCallEvents inicializado');
 
-  // LocalVideoStreamAdded: video local va al PIP (remoteVideoContainer - que se ve pequeño)
+  // LocalVideoStreamAdded: MI video → debe ir al PIP PEQUEÑO (remoteVideoContainer)
   call.on(VoxImplant.CallEvents.LocalVideoStreamAdded, (event) => {
-    console.log('[CALLS] 📷 LocalVideoStreamAdded disparado');
+    console.log('[CALLS] 📷📷📷 LocalVideoStreamAdded - MI VIDEO 📷📷📷');
     
-    // Marcar que esperamos un video local
-    pendingLocalVideo = true;
-    
-    // Renderizar sin contenedor
-    event.videoStream.render();
-    console.log('[CALLS] render() llamado para video LOCAL (sin contenedor)');
+    const pipContainer = document.getElementById('remoteVideoContainer');
+    if (pipContainer) {
+      pipContainer.innerHTML = '';
+      event.videoStream.render(pipContainer);
+      console.log('[CALLS] ✅ Video LOCAL renderizado en remoteVideoContainer (PIP)');
+      sysLog('📷 Mi video activo');
+      
+      // Forzar estilo
+      setTimeout(() => {
+        const video = pipContainer.querySelector('video');
+        if (video) {
+          video.style.cssText = `
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            position: relative !important;
+          `;
+        }
+      }, 100);
+    }
   });
 
-  // RemoteVideoStreamAdded: video remoto va a la pantalla principal (localVideoContainer - que se ve grande)
+  // RemoteVideoStreamAdded: video del CLIENTE → debe ir a PANTALLA GRANDE (localVideoContainer)
   call.on(VoxImplant.CallEvents.RemoteVideoStreamAdded, (event) => {
-    console.log('[CALLS] 🎥🎥🎥 RemoteVideoStreamAdded disparado 🎥🎥🎥');
+    console.log('[CALLS] 🎥🎥🎥 RemoteVideoStreamAdded - VIDEO DEL CLIENTE 🎥🎥🎥');
     
-    // Marcar que esperamos un video remoto
-    pendingRemoteVideo = true;
-    
-    // Renderizar sin contenedor
-    event.videoStream.render();
-    console.log('[CALLS] render() llamado para video REMOTO (sin contenedor)');
+    const mainContainer = document.getElementById('localVideoContainer');
+    if (mainContainer) {
+      mainContainer.innerHTML = '';
+      event.videoStream.render(mainContainer);
+      console.log('[CALLS] ✅ Video REMOTO renderizado en localVideoContainer (GRANDE)');
+      sysLog('🎥 Video del cliente activo');
+      
+      // Forzar estilo
+      setTimeout(() => {
+        const video = mainContainer.querySelector('video');
+        if (video) {
+          video.style.cssText = `
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            position: relative !important;
+          `;
+        }
+      }, 100);
+    }
   });
 
   try {
@@ -163,8 +99,6 @@ function handleCallEvents(call) {
     console.log('[CALLS] Disconnected');
     sysLog('Llamada finalizada');
     currentCall = null;
-    pendingLocalVideo = false;
-    pendingRemoteVideo = false;
     resetUI();
   });
 
@@ -172,8 +106,6 @@ function handleCallEvents(call) {
     console.log('[CALLS] Failed:', e.reason);
     sysLog(`Error: ${e.reason}`, true);
     currentCall = null;
-    pendingLocalVideo = false;
-    pendingRemoteVideo = false;
     resetUI();
   });
 }
@@ -182,9 +114,67 @@ function attachEndpointHandlers(endpoint) {
   if (!endpoint) return;
 
   endpoint.on(VoxImplant.EndpointEvents.RemoteVideoStreamAdded, (ev) => {
-    console.log('[CALLS] 🎥 Endpoint RemoteVideoStreamAdded disparado');
-    pendingRemoteVideo = true;
-    ev.videoStream.render();
+    console.log('[CALLS] 🎥 Endpoint RemoteVideoStreamAdded');
+    
+    const mainContainer = document.getElementById('localVideoContainer');
+    if (mainContainer) {
+      mainContainer.innerHTML = '';
+      ev.videoStream.render(mainContainer);
+      sysLog('🎥 Video remoto (endpoint)');
+    }
+  });
+}
+
+/**
+ * Busca videos huérfanos y los mueve a sus contenedores
+ */
+function relocateOrphanVideos() {
+  const allVideos = document.querySelectorAll('video');
+  const pipContainer = document.getElementById('remoteVideoContainer');
+  const mainContainer = document.getElementById('localVideoContainer');
+
+  if (!pipContainer || !mainContainer) return;
+
+  const videosInPip = pipContainer.querySelectorAll('video').length;
+  const videosInMain = mainContainer.querySelectorAll('video').length;
+
+  allVideos.forEach(video => {
+    const inPip = pipContainer.contains(video);
+    const inMain = mainContainer.contains(video);
+
+    // Si el video está huérfano (fuera de ambos contenedores)
+    if (!inPip && !inMain) {
+      console.warn('[CALLS] 🚨 VIDEO HUÉRFANO DETECTADO 🚨');
+      console.log('[CALLS] Videos en PIP:', videosInPip, 'Videos en Main:', videosInMain);
+      
+      // Si no hay videos en el PIP, este huérfano va ahí (es el preview o video local)
+      if (videosInPip === 0) {
+        console.log('[CALLS] ➡️ Moviendo huérfano a PIP (remoteVideoContainer)');
+        pipContainer.appendChild(video);
+        video.style.cssText = `
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          position: relative !important;
+        `;
+      }
+      // Si no hay videos en la pantalla principal, este huérfano va ahí
+      else if (videosInMain === 0) {
+        console.log('[CALLS] ➡️ Moviendo huérfano a PANTALLA GRANDE (localVideoContainer)');
+        mainContainer.appendChild(video);
+        video.style.cssText = `
+          width: 100% !important;
+          height: 100% !important;
+          object-fit: cover !important;
+          position: relative !important;
+        `;
+      }
+      // Si ambos contenedores ya tienen video, eliminamos el huérfano
+      else {
+        console.log('[CALLS] 🗑️ Eliminando video huérfano redundante');
+        video.remove();
+      }
+    }
   });
 }
 
@@ -248,11 +238,11 @@ export function toggleLocalVideo() {
 }
 
 function resetUI() {
-  const remote = document.getElementById('remoteVideoContainer');
-  const local = document.getElementById('localVideoContainer');
+  const mainContainer = document.getElementById('localVideoContainer');
+  const pipContainer = document.getElementById('remoteVideoContainer');
 
-  if (local) {
-    local.innerHTML = `
+  if (mainContainer) {
+    mainContainer.innerHTML = `
       <div class="text-center flex items-center justify-center h-full">
         <div>
           <div class="text-5xl mb-4 opacity-10">📞</div>
@@ -263,17 +253,18 @@ function resetUI() {
       </div>`;
   }
 
-  if (remote) {
-    remote.innerHTML = `
+  if (pipContainer) {
+    pipContainer.innerHTML = `
       <div id="localVideoSpinner" class="flex flex-col items-center animate-pulse justify-center h-full">
         <div class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
       </div>`;
   }
 
-  // Limpiar cualquier video huérfano
+  // Eliminar todos los videos huérfanos
   const allVideos = document.querySelectorAll('video');
   allVideos.forEach(video => {
-    if (!local.contains(video) && !remote.contains(video)) {
+    if (!mainContainer.contains(video) && !pipContainer.contains(video)) {
+      console.log('[CALLS] Removiendo video huérfano en reset');
       video.remove();
     }
   });
