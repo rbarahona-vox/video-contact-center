@@ -1,41 +1,54 @@
-// js/media.js
+// js/media.js - PARA USAR CON EL HACK CSS
 import { VOX_CONFIG } from './config.js';
 import { sysLog } from './ui.js';
 
 export async function showLocalPreview() {
   console.log('MEDIA: Iniciando preview de video local');
 
-  // Usamos el ID configurado o el fallback del HTML
-  const containerId = VOX_CONFIG.LOCAL_VIDEO_ID || 'localVideoContainer';
-  const container = document.getElementById(containerId);
+  // Con el HACK CSS: remoteVideoContainer se VE pequeño
+  // Así que queremos renderizar el preview ahí
+  const container = document.getElementById('remoteVideoContainer');
 
   if (!container) {
-    console.warn('MEDIA: No se encontró contenedor para la preview local:', containerId);
+    console.warn('MEDIA: No se encontró remoteVideoContainer para preview');
     return false;
   }
 
   try {
     const sdk = VoxImplant.getInstance();
 
-    // Limpiamos cualquier contenido previo
-    container.innerHTML = '';
-
-    // Quitamos el spinner si está presente
+    // Limpiamos el spinner
     const spinner = document.getElementById('localVideoSpinner');
     if (spinner) {
       spinner.remove();
     }
 
-    // WebSDK: muestra el video local en el contenedor indicado
-    // Firma habitual: showLocalVideo(boolean, elementId)
-    await sdk.showLocalVideo(true, containerId);
+    container.innerHTML = '';
 
-    console.log('MEDIA: Preview local renderizada en', containerId);
-    sysLog('Cámara local preparada');
+    // Llamamos showLocalVideo
+    await sdk.showLocalVideo(true);
+
+    console.log('MEDIA: showLocalVideo llamado, buscando video preview...');
+    
+    // Buscamos y movemos el video preview al contenedor correcto
+    setTimeout(() => {
+      const allVideos = document.querySelectorAll('video');
+      const localContainer = document.getElementById('localVideoContainer');
+      
+      allVideos.forEach(video => {
+        // Si el video no está en ninguno de los dos contenedores, es el preview
+        if (!container.contains(video) && !localContainer.contains(video)) {
+          console.log('MEDIA: ✅ Preview encontrado, moviendo a remoteVideoContainer (PIP visual)');
+          container.appendChild(video);
+          sysLog('📷 Preview local en PIP');
+        }
+      });
+    }, 300);
+
     return true;
   } catch (e) {
-    console.error('MEDIA: Fallo crítico en showLocalPreview', e);
-    sysLog('No se pudo iniciar la vista previa de la cámara', true);
+    console.error('MEDIA: Error en showLocalPreview', e);
+    sysLog('Error al iniciar preview de cámara', true);
     return false;
   }
 }

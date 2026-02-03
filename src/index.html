@@ -1,147 +1,285 @@
 <!DOCTYPE html>
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>VoxVideo Expert | Contact Center</title>
-    
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/voximplant-websdk"></script>
-    
+    <script src="https://unpkg.com/voximplant-websdk@4.11.1-2965"></script>
+
     <script type="module" src="js/main.js"></script>
 
     <style>
-        .video-wrapper video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            background: #0f172a;
-        }
-        #logConsole::-webkit-scrollbar { width: 4px; }
-        #logConsole::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+      .video-wrapper video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #0f172a;
+      }
+      #logConsole::-webkit-scrollbar {
+        width: 4px;
+      }
+      #logConsole::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 10px;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #1e293b;
+        border-radius: 10px;
+      }
     </style>
-</head>
-<body class="bg-slate-950 text-slate-200 min-h-screen overflow-hidden font-sans">
-
-    <div id="authOverlay" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 transition-all duration-700">
-        <div class="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl w-full max-w-md transform">
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/20">
-                    <span class="text-3xl text-white">👤</span>
-                </div>
-                <h2 class="text-2xl font-bold text-white tracking-tight">Acceso Agente</h2>
-                <p id="initStatus" class="text-slate-500 text-sm mt-2 font-medium">Introduce tus credenciales</p>
-            </div>
-
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 font-mono">Usuario de Red</label>
-                    <div class="relative">
-                        <input type="text" id="username" placeholder="ej: agente01" 
-                            class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-all text-white outline-none placeholder:text-slate-600">
-                        <span class="absolute right-4 top-3.5 text-slate-600 text-[10px] font-mono pointer-events-none">@video-contact...</span>
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 font-mono">Password</label>
-                    <input type="password" id="password" placeholder="••••••••" 
-                        class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-all text-white outline-none placeholder:text-slate-600">
-                </div>
-                <button id="mainLoginBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg mt-4 active:scale-95 flex justify-center items-center gap-2">
-                    <span>INICIAR SESIÓN</span>
-                </button>
-            </div>
+  </head>
+  <body
+    class="bg-slate-950 text-slate-200 min-h-screen overflow-hidden font-sans"
+  >
+    <div
+      id="authOverlay"
+      class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 transition-all duration-700"
+    >
+      <div
+        class="bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-2xl w-full max-w-md transform"
+      >
+        <div class="text-center mb-8">
+          <div
+            class="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/20"
+          >
+            <span class="text-3xl text-white">👤</span>
+          </div>
+          <h2 class="text-2xl font-bold text-white tracking-tight">
+            Acceso Agente
+          </h2>
+          <p
+            id="initStatus"
+            class="text-slate-500 text-sm mt-2 font-medium"
+          >
+            Introduce tus credenciales
+          </p>
         </div>
+
+        <div class="space-y-4">
+          <div>
+            <label
+              class="block text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 font-mono"
+              >Usuario de Red</label
+            >
+            <div class="relative">
+              <input
+                type="text"
+                id="username"
+                placeholder="ej: agente01"
+                class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-all text-white outline-none placeholder:text-slate-600"
+              />
+              <span
+                class="absolute right-4 top-3.5 text-slate-600 text-[10px] font-mono pointer-events-none"
+                >@video-contact...</span
+              >
+            </div>
+          </div>
+          <div>
+            <label
+              class="block text-[10px] font-bold text-slate-500 uppercase ml-1 mb-1 font-mono"
+              >Password</label
+            >
+            <input
+              type="password"
+              id="password"
+              placeholder="••••••••"
+              class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-all text-white outline-none placeholder:text-slate-600"
+            />
+          </div>
+          <button
+            id="mainLoginBtn"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg mt-4 active:scale-95 flex justify-center items-center gap-2"
+          >
+            <span>INICIAR SESIÓN</span>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <nav class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md relative z-10">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold shadow-lg">V</div>
-                <span class="text-xl font-bold tracking-tight text-white italic">Vox<span class="text-blue-500 font-light not-italic font-mono">Expert</span></span>
-            </div>
-            <div id="connectionStatus" class="flex items-center gap-3 text-sm font-medium text-slate-400 bg-slate-800/50 px-4 py-1.5 rounded-full border border-slate-700">
-                <span id="statusIndicator" class="w-2.5 h-2.5 rounded-full bg-rose-600 transition-all duration-500"></span>
-                <span id="statusText" class="uppercase text-[10px] tracking-widest">Offline</span>
-            </div>
+    <nav
+      class="border-b border-slate-800 bg-slate-900/50 backdrop-blur-md relative z-10"
+    >
+      <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center font-bold shadow-lg"
+          >
+            V
+          </div>
+          <span
+            class="text-xl font-bold tracking-tight text-white italic"
+            >Vox<span
+              class="text-blue-500 font-light not-italic font-mono"
+              >Expert</span
+            ></span
+          >
         </div>
+        <div
+          id="connectionStatus"
+          class="flex items-center gap-3 text-sm font-medium text-slate-400 bg-slate-800/50 px-4 py-1.5 rounded-full border border-slate-700"
+        >
+          <span
+            id="statusIndicator"
+            class="w-2.5 h-2.5 rounded-full bg-rose-600 transition-all duration-500"
+          ></span>
+          <span
+            id="statusText"
+            class="uppercase text-[10px] tracking-widest"
+            >Offline</span
+          >
+        </div>
+      </div>
     </nav>
 
     <main class="container mx-auto px-6 py-8 relative z-10">
-        <div class="grid grid-cols-12 gap-8">
-            
-            <div class="col-span-12 lg:col-span-8 flex flex-col gap-6">
-                
-                <!-- CONTENEDOR PRINCIPAL VIDEO REMOTO -->
-                <div class="relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl aspect-video w-full group">
-                    <div id="remoteVideoContainer" class="video-wrapper w-full h-full flex items-center justify-center italic text-slate-600 transition-all">
-                        <div class="text-center">
-                            <div class="text-5xl mb-4 opacity-10">📞</div>
-                            <p class="font-mono text-xs uppercase tracking-widest">Esperando conexión</p>
-                        </div>
-                    </div>
-                    
-                    <!-- PIP: VIDEO LOCAL -->
-                    <div class="absolute bottom-6 right-6 w-1/4 aspect-video bg-slate-950 rounded-2xl border border-white/10 overflow-hidden shadow-2xl z-20">
-                        <div id="localVideoContainer" class="video-wrapper w-full h-full relative flex items-center justify-center bg-slate-950">
-                            <div id="localVideoSpinner" class="flex flex-col items-center animate-pulse">
-                                <div class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CONTROLES DE LLAMADA -->
-                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex flex-wrap items-center justify-between gap-6 shadow-xl">
-                    <div class="flex items-center gap-4">
-                        <button id="toggleMic" class="w-12 h-12 rounded-2xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-all border border-slate-700 text-xl shadow-inner active:scale-95">🎤</button>
-                        <button id="toggleCam" class="w-12 h-12 rounded-2xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-all border border-slate-700 text-xl shadow-inner active:scale-95">📷</button>
-                    </div>
-
-                    <div class="flex-1 max-w-md flex items-center gap-3 bg-slate-950 px-5 py-3 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-all shadow-inner">
-                        <span class="text-slate-600 text-[10px] font-bold font-mono uppercase tracking-tighter">Destino</span>
-                        <input type="text" id="callTo" placeholder="nombre_usuario" 
-                            class="bg-transparent w-full text-blue-400 font-mono text-sm outline-none placeholder:text-slate-800">
-                    </div>
-
-                    <button id="callBtn" class="px-10 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold tracking-widest transition-all shadow-lg shadow-emerald-900/20 active:scale-95">
-                        INICIAR LLAMADA
-                    </button>
-                </div>
+      <div class="grid grid-cols-12 gap-8">
+        <div class="col-span-12 lg:col-span-8 flex flex-col gap-6">
+          <!-- CONTENEDOR PRINCIPAL - AHORA ES localVideoContainer (se renderiza como GRANDE) -->
+          <div
+            class="relative bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl aspect-video w-full group"
+          >
+            <div
+              id="localVideoContainer"
+              class="video-wrapper w-full h-full flex items-center justify-center italic text-slate-600 transition-all"
+            >
+              <div class="text-center">
+                <div class="text-5xl mb-4 opacity-10">📞</div>
+                <p
+                  class="font-mono text-xs uppercase tracking-widest"
+                >
+                  Esperando conexión
+                </p>
+              </div>
             </div>
 
-            <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
-                
-                <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl">
-                    <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-4 font-mono">Detalles del Agente</h3>
-                    <div class="flex items-center gap-4 bg-black/20 p-4 rounded-2xl border border-white/5">
-                        <div class="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-400 text-lg">👤</div>
-                        <div class="flex flex-col">
-                            <span class="text-[9px] uppercase text-slate-600 font-bold">Identificador</span>
-                            <span id="displayUser" class="text-blue-400 font-mono text-sm font-bold tracking-tight">Desconectado</span>
-                        </div>
-                    </div>
+            <!-- PIP: VIDEO FLOTANTE - AHORA ES remoteVideoContainer (se renderiza como PEQUEÑO) -->
+            <div
+              class="absolute bottom-6 right-6 w-1/4 aspect-video bg-slate-950 rounded-2xl border border-white/10 overflow-hidden shadow-2xl z-20"
+            >
+              <div
+                id="remoteVideoContainer"
+                class="video-wrapper w-full h-full relative flex items-center justify-center bg-slate-950"
+              >
+                <div
+                  id="localVideoSpinner"
+                  class="flex flex-col items-center animate-pulse"
+                >
+                  <div
+                    class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"
+                  ></div>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <div class="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 font-mono text-[10px] shadow-xl flex-1 flex flex-col min-h-[350px]">
-                    <div class="flex justify-between items-center mb-6">
-                        <div class="flex gap-1.5">
-                            <div class="w-2.5 h-2.5 rounded-full bg-rose-500/20 border border-rose-500/40"></div>
-                            <div class="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500/40"></div>
-                            <div class="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-pulse"></div>
-                        </div>
-                        <span class="text-slate-600 uppercase text-[9px] tracking-widest font-bold">System Monitor</span>
-                    </div>
-                    <div id="logConsole" class="flex-1 overflow-y-auto space-y-2 text-emerald-500/60 scroll-smooth pr-2 custom-scrollbar leading-relaxed">
-                        <div class="opacity-40">> Initializing environment...</div>
-                    </div>
-                </div>
+          <!-- CONTROLES DE LLAMADA -->
+          <div
+            class="bg-slate-900 p-6 rounded-3xl border border-slate-800 flex flex-wrap items-center justify-between gap-6 shadow-xl"
+          >
+            <div class="flex items-center gap-4">
+              <button
+                id="toggleMic"
+                class="w-12 h-12 rounded-2xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-all border border-slate-700 text-xl shadow-inner active:scale-95"
+              >
+                🎤
+              </button>
+              <button
+                id="toggleCam"
+                class="w-12 h-12 rounded-2xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center transition-all border border-slate-700 text-xl shadow-inner active:scale-95"
+              >
+                📷
+              </button>
             </div>
 
+            <div
+              class="flex-1 max-w-md flex items-center gap-3 bg-slate-950 px-5 py-3 rounded-2xl border border-slate-800 focus-within:border-blue-500/50 transition-all shadow-inner"
+            >
+              <span
+                class="text-slate-600 text-[10px] font-bold font-mono uppercase tracking-tighter"
+                >Destino</span
+              >
+              <input
+                type="text"
+                id="callTo"
+                placeholder="nombre_usuario"
+                class="bg-transparent w-full text-blue-400 font-mono text-sm outline-none placeholder:text-slate-800"
+              />
+            </div>
+
+            <button
+              id="callBtn"
+              class="px-10 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold tracking-widest transition-all shadow-lg shadow-emerald-900/20 active:scale-95"
+            >
+              INICIAR LLAMADA
+            </button>
+          </div>
         </div>
-    </main>
 
-</body>
+        <div class="col-span-12 lg:col-span-4 flex flex-col gap-6">
+          <div
+            class="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl"
+          >
+            <h3
+              class="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mb-4 font-mono"
+            >
+              Detalles del Agente
+            </h3>
+            <div
+              class="flex items-center gap-4 bg-black/20 p-4 rounded-2xl border border-white/5"
+            >
+              <div
+                class="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-400 text-lg"
+              >
+                👤
+              </div>
+              <div class="flex flex-col">
+                <span
+                  class="text-[9px] uppercase text-slate-600 font-bold"
+                  >Identificador</span
+                >
+                <span
+                  id="displayUser"
+                  class="text-blue-400 font-mono text-sm font-bold tracking-tight"
+                  >Desconectado</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="bg-slate-900/50 p-6 rounded-3xl border border-slate-800 font-mono text-[10px] shadow-xl flex-1 flex flex-col min-h-[350px]"
+          >
+            <div class="flex justify-between items-center mb-6">
+              <div class="flex gap-1.5">
+                <div
+                  class="w-2.5 h-2.5 rounded-full bg-rose-500/20 border border-rose-500/40"
+                ></div>
+                <div
+                  class="w-2.5 h-2.5 rounded-full bg-amber-500/20 border border-amber-500/40"
+                ></div>
+                <div
+                  class="w-2.5 h-2.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 animate-pulse"
+                ></div>
+              </div>
+              <span
+                class="text-slate-600 uppercase text-[9px] tracking-widest font-bold"
+                >System Monitor</span
+              >
+            </div>
+            <div
+              id="logConsole"
+              class="flex-1 overflow-y-auto space-y-2 text-emerald-500/60 scroll-smooth pr-2 custom-scrollbar leading-relaxed"
+            >
+              <div class="opacity-40">&gt; Initializing environment...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
 </html>
