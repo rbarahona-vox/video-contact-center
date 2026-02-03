@@ -212,17 +212,32 @@ export async function toggleCall(destination = '') {
 }
 
 export function toggleLocalAudio() {
-  if (currentCall) {
-    isMicActive = !isMicActive;
-    try {
-      currentCall.sendAudio(isMicActive);
-    } catch (e) {
-      console.error('[CALLS] Error sendAudio:', e);
-    }
-    return isMicActive;
+  if (!currentCall) return true;
+
+  isMicActive = !isMicActive;
+
+  try {
+    // Buscar cualquier video local (preview o en llamada)
+    const video = document.querySelector('video');
+    if (!video || !video.srcObject) return isMicActive;
+
+    const stream = video.srcObject;
+    const audioTracks = stream.getAudioTracks();
+
+    audioTracks.forEach(track => {
+      track.enabled = isMicActive;
+    });
+
+    sysLog(isMicActive ? '🎤 Micrófono activado' : '🔇 Micrófono silenciado');
+  } catch (e) {
+    console.error('[CALLS] Error toggling audio track:', e);
   }
-  return true;
+
+  return isMicActive;
 }
+
+
+
 
 export function toggleLocalVideo() {
   if (currentCall) {

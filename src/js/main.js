@@ -44,7 +44,6 @@ ui.loginBtn.addEventListener('click', async () => {
 
     updateAuthUI('Sincronizando cámara...', 'text-emerald-400');
 
-    // Preview local (flotante). El PIP se pintará con LocalVideoStreamAdded.
     await showLocalPreview();
 
     setTimeout(() => {
@@ -96,14 +95,19 @@ document.getElementById('callBtn')?.addEventListener('click', () => {
   toggleCall(destination);
 });
 
+// CORREGIDO: Toggle del micrófono con indicador visual correcto
 document.getElementById('toggleMic')?.addEventListener('click', (e) => {
-  const active = toggleLocalAudio();
-  e.currentTarget.classList.toggle('bg-slate-700', !active);
-  e.currentTarget.classList.toggle('bg-rose-600', active);
-});
-
-document.getElementById('toggleCam')?.addEventListener('click', (e) => {
-  const active = toggleLocalVideo();
-  e.currentTarget.classList.toggle('bg-slate-700', !active);
-  e.currentTarget.classList.toggle('bg-rose-600', active);
+  const isActive = toggleLocalAudio();
+  
+  // Si el micrófono está ACTIVO → fondo normal (slate-800)
+  // Si el micrófono está SILENCIADO → fondo rojo (rose-600)
+  if (isActive) {
+    e.currentTarget.classList.remove('bg-rose-600');
+    e.currentTarget.classList.add('bg-slate-800');
+    e.currentTarget.innerHTML = '🎤';
+  } else {
+    e.currentTarget.classList.remove('bg-slate-800');
+    e.currentTarget.classList.add('bg-rose-600');
+    e.currentTarget.innerHTML = '🔇';
+  }
 });
