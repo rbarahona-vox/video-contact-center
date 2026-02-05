@@ -1,4 +1,4 @@
-// js/calls.js - VERSIÓN ULTRA SIMPLIFICADA Y AGRESIVA
+// js/calls.js - VERSIÓN CON CAMBIOS MÍNIMOS
 
 import { VOX_CONFIG } from './config.js';
 import { sysLog } from './ui.js';
@@ -146,11 +146,12 @@ function handleCallEvents(call) {
     onCallEvent('CALL_CONNECTED');
   });
 
-  call.on(VoxImplant.CallEvents.Disconnected, () => {
+  call.on(VoxImplant.CallEvents.Disconnected, async () => {
     console.log('[CALLS] Disconnected');
     sysLog('Llamada finalizada');
     currentCall = null;
     resetUI();
+    // 🔥 CAMBIO 1: NO llamar restoreLocalPreview - el video ya está ahí
     updateCallButton({
       text: 'ESPERANDO LLAMADA',
       enabled: false,
@@ -296,9 +297,6 @@ export function toggleLocalAudio() {
   return isMicActive;
 }
 
-
-
-
 export function toggleLocalVideo() {
   if (currentCall) {
     isCamActive = !isCamActive;
@@ -316,6 +314,7 @@ function resetUI() {
   const mainContainer = document.getElementById('localVideoContainer');
   const pipContainer = document.getElementById('remoteVideoContainer');
 
+  // 🔥 CAMBIO 2: Solo limpiar la pantalla grande
   if (mainContainer) {
     mainContainer.innerHTML = `
       <div class="text-center flex items-center justify-center h-full">
@@ -328,19 +327,19 @@ function resetUI() {
       </div>`;
   }
 
-  if (pipContainer) {
-    pipContainer.innerHTML = `
-      <div id="localVideoSpinner" class="flex flex-col items-center animate-pulse justify-center h-full">
-        <div class="w-6 h-6 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
-      </div>`;
-  }
+  // 🔥 CAMBIO 3: NO tocar pipContainer - dejar el video local intacto
+  // REMOVIDO: pipContainer.innerHTML = ...
 
-  // Eliminar todos los videos huérfanos
+  // 🔥 CAMBIO 4: NO eliminar videos del PIP
   const allVideos = document.querySelectorAll('video');
   allVideos.forEach(video => {
+    // Solo eliminar si está huérfano Y no está en el PIP
     if (!mainContainer.contains(video) && !pipContainer.contains(video)) {
       console.log('[CALLS] Removiendo video huérfano en reset');
       video.remove();
     }
   });
 }
+
+// 🔥 CAMBIO 5: ELIMINAR esta función completamente
+// async function restoreLocalPreview() { ... }

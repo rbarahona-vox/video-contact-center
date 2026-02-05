@@ -32,7 +32,7 @@ const STATUS_TRANSITIONS = {
   DND: [ACD.ONLINE, ACD.OFFLINE],
   BANNED: [ACD.ONLINE],
   AFTERSERVICE: [ACD.ONLINE]
-  };
+};
 
 
 function getAvailableStatuses(current) {
@@ -81,8 +81,7 @@ export function initAgentStatus() {
     sysLog(`Estado SmartQueue: ${e.status}`);
   });
   // ⏱️ Auto ONLINE post-login (simple y controlado)
-    setTimeout(autoOnlineAfterLogin, 2000);
-
+  setTimeout(autoOnlineAfterLogin, 2000);
 }
 
 /**
@@ -92,11 +91,11 @@ function renderStatus(status) {
   const effectiveStatus = forcedStatus || status;
   if (!ui.statusText || !ui.indicator) return;
 
-    ui.statusText.innerText = ACD_LABELS[status] || status;
+  ui.statusText.innerText = ACD_LABELS[effectiveStatus] || effectiveStatus;
 
   ui.indicator.className = 'w-2.5 h-2.5 rounded-full transition-all';
 
-  switch (status) {
+  switch (effectiveStatus) {
     case ACD.READY:
       ui.indicator.classList.add('bg-emerald-500');
       break;
@@ -132,45 +131,42 @@ function renderStatus(status) {
  * Convierte el badge en botón con restricciones
  */
 function makeStatusClickable() {
-    console.log('[ACD] makeStatusClickable inicializado');
+  console.log('[ACD] makeStatusClickable inicializado');
 
   const container = document.getElementById('connectionStatus');
   container.style.pointerEvents = 'auto';
-container.style.zIndex = '9999';
-container.style.position = 'relative';
+  container.style.zIndex = '9999';
+  container.style.position = 'relative';
   if (!container) {
     console.warn('[ACD] #connectionStatus no encontrado');
     return;
   }
-  
-  if (!container) return;
 
   container.style.cursor = 'pointer';
 
   container.addEventListener('click', (e) => {
-      console.group('[ACD CLICK DEBUG]');
-  console.log('currentStatus:', currentStatus);
-  console.log('typeof currentStatus:', typeof currentStatus);
-  console.log('STATUS_TRANSITIONS keys:', Object.keys(STATUS_TRANSITIONS));
-  console.log(
-    'STATUS_TRANSITIONS[currentStatus]:',
-    STATUS_TRANSITIONS[currentStatus]
-  );
-  console.log(
-    'getAvailableStatuses(currentStatus):',
-    getAvailableStatuses(currentStatus)
-  );
-  console.groupEnd();
+    console.group('[ACD CLICK DEBUG]');
+    console.log('currentStatus:', currentStatus);
+    console.log('typeof currentStatus:', typeof currentStatus);
+    console.log('STATUS_TRANSITIONS keys:', Object.keys(STATUS_TRANSITIONS));
+    console.log(
+      'STATUS_TRANSITIONS[currentStatus]:',
+      STATUS_TRANSITIONS[currentStatus]
+    );
+    console.log(
+      'getAvailableStatuses(currentStatus):',
+      getAvailableStatuses(currentStatus)
+    );
+    console.groupEnd();
 
-  console.log('[ACD CLICK] recibido', currentStatus);
+    console.log('[ACD CLICK] recibido', currentStatus);
 
     e.stopPropagation();
 
     if (!currentStatus) {
-    sysLog('Estado ACD aún no disponible, espera un momento…');
-    return;
+      sysLog('Estado ACD aún no disponible, espera un momento…');
+      return;
     }
-
 
     if (AUTO_STATUSES.includes(currentStatus)) {
       sysLog(`Estado ${currentStatus}: cambio no permitido`, true);
@@ -180,23 +176,23 @@ container.style.position = 'relative';
     toggleStatusMenu(container);
   });
 
-document.addEventListener('click', (e) => {
-  const menu = document.getElementById('acdStatusMenu');
-  const container = document.getElementById('connectionStatus');
+  document.addEventListener('click', (e) => {
+    const menu = document.getElementById('acdStatusMenu');
+    const container = document.getElementById('connectionStatus');
 
-  if (!menu) return;
+    if (!menu) return;
 
-  // Si el click fue dentro del badge o del menú, NO cerrar
-  if (container.contains(e.target) || menu.contains(e.target)) {
-    return;
-  }
+    // Si el click fue dentro del badge o del menú, NO cerrar
+    if (container.contains(e.target) || menu.contains(e.target)) {
+      return;
+    }
 
-  closeStatusMenu();
-});
+    closeStatusMenu();
+  });
 }
 
 function toggleStatusMenu(container) {
-     console.group('[ACD TOGGLE MENU]');
+  console.group('[ACD TOGGLE MENU]');
   console.log('container exists:', !!container);
   console.log('currentStatus:', currentStatus);
   console.log(
@@ -217,7 +213,7 @@ function toggleStatusMenu(container) {
   const menu = document.createElement('div');
   menu.id = 'acdStatusMenu';
   menu.className =
-  'absolute top-full right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[9999] text-[10px] font-mono';
+    'absolute top-full right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-[9999] text-[10px] font-mono';
 
 
   options.forEach((status) => {
@@ -247,7 +243,7 @@ function closeStatusMenu() {
 async function changeStatus(next) {
   try {
     await sdk.setOperatorACDStatus(
-    typeof next === 'string' ? next.toUpperCase() : String(next).toUpperCase()
+      typeof next === 'string' ? next.toUpperCase() : String(next).toUpperCase()
     );
     // WebSDK v4 → repaint inmediato
     currentStatus = next;
@@ -283,23 +279,31 @@ export async function onCallEvent(event) {
       break;
 
     case 'CALL_DISCONNECTED':
-      releaseForcedStatus();          // 👈 LIBERA EL ESTADO
-      await syncAgentStatusFromACD(); // 👈 pinta AfterService real
+      // 🔥 FIX: Sincronizar PRIMERO, LUEGO liberar el forced status
+      await syncAgentStatusFromACD();
+      forcedStatus = null; // Liberar sin re-renderizar con estado viejo
+      renderStatus(currentStatus); // Ahora currentStatus ya está actualizado
       break;
   }
 }
 
 export async function syncAgentStatusFromACD() {
-  const status = await sdk.getOperatorACDStatus();
-  if (status) {
-    currentStatus = status;
-    renderStatus(status);
-    sysLog(`Estado SmartQueue sincronizado: ${status}`);
+  try {
+    const status = await sdk.getOperatorACDStatus();
+    console.log('[ACD SYNC] Estado obtenido del backend:', status);
+    
+    if (status) {
+      currentStatus = status;
+      // NO renderizar aquí - dejar que onCallEvent lo haga
+      sysLog(`Estado SmartQueue sincronizado: ${status}`);
+    }
+  } catch (e) {
+    console.error('[ACD SYNC] Error:', e);
   }
 }
 
 function normalizeStatus(status) {
-  return status.replace('_', '').toUpperCase();
+  return String(status).replace('_', '').toUpperCase();
 }
 
 async function autoOnlineAfterLogin() {
@@ -313,7 +317,6 @@ async function autoOnlineAfterLogin() {
       console.log('[ACD AUTOONLINE] ✅ Entrando al IF - intentando cambio de estado');
       sysLog('Auto-online: intentando OFFLINE → ONLINE...');
 
-      // 🔧 FIX: Usar 'Online' capitalizado, NO 'ONLINE' en mayúsculas
       console.log('[ACD AUTOONLINE] Llamando setOperatorACDStatus("Online")...');
       const result = await sdk.setOperatorACDStatus('ONLINE');
       console.log('[ACD AUTOONLINE] Resultado de setOperatorACDStatus:', result);
