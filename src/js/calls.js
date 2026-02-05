@@ -7,6 +7,38 @@ let currentCall = null;
 let isMicActive = true;
 let isCamActive = true;
 
+function updateCallButton({ text, enabled, style }) {
+  const btn = document.getElementById('callBtn');
+  if (!btn) return;
+
+  btn.innerText = text;
+  btn.disabled = !enabled;
+
+  // Reset clases base
+  btn.className =
+    'px-10 py-3.5 rounded-2xl font-bold tracking-widest transition-all shadow-lg active:scale-95';
+
+  if (!enabled) {
+    btn.classList.add(
+      'bg-slate-700',
+      'text-slate-400',
+      'cursor-not-allowed'
+    );
+  } else if (style === 'answer') {
+    btn.classList.add(
+      'bg-emerald-600',
+      'hover:bg-emerald-500',
+      'text-white'
+    );
+  } else if (style === 'hangup') {
+    btn.classList.add(
+      'bg-rose-600',
+      'hover:bg-rose-500',
+      'text-white'
+    );
+  }
+}
+
 export function setupCallHandlers() {
   const sdk = VoxImplant.getInstance();
 
@@ -14,11 +46,20 @@ export function setupCallHandlers() {
     console.log('[CALLS] ========== IncomingCall recibido ==========');
     sysLog('¡Llamada entrante detectada!');
     currentCall = e.call;
+    updateCallButton({
+      text: 'RESPONDER LLAMADA',
+      enabled: true,
+      style: 'answer',
+    });
     handleCallEvents(currentCall);
   });
 
-  // Monitor continuo más agresivo
   setInterval(relocateOrphanVideos, 200);
+
+  updateCallButton({
+    text: 'ESPERANDO LLAMADA',
+    enabled: false,
+  });
 }
 
 function handleCallEvents(call) {
@@ -93,6 +134,11 @@ function handleCallEvents(call) {
   call.on(VoxImplant.CallEvents.Connected, () => {
     console.log('[CALLS] ✅ Connected');
     sysLog('Llamada establecida');
+    updateCallButton({
+      text: 'FINALIZAR LLAMADA',
+      enabled: true,
+      style: 'hangup',
+    });
   });
 
   call.on(VoxImplant.CallEvents.Disconnected, () => {
@@ -100,12 +146,21 @@ function handleCallEvents(call) {
     sysLog('Llamada finalizada');
     currentCall = null;
     resetUI();
+    updateCallButton({
+      text: 'ESPERANDO LLAMADA',
+      enabled: false,
+    });
+
   });
 
   call.on(VoxImplant.CallEvents.Failed, (e) => {
     console.log('[CALLS] Failed:', e.reason);
     sysLog(`Error: ${e.reason}`, true);
     currentCall = null;
+    updateCallButton({
+      text: 'ESPERANDO LLAMADA',
+      enabled: false,
+    });
     resetUI();
   });
 }

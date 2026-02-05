@@ -9,6 +9,8 @@ import {
   toggleLocalVideo,
   toggleLocalAudio,
 } from './calls.js';
+import { initAgentStatus } from './agentStatus.js';
+
 
 const ERROR_MAP = {
   AuthResult: 'Usuario o contraseña incorrectos',
@@ -16,6 +18,10 @@ const ERROR_MAP = {
   ConnectionNodeError: 'Error de conexión con el nodo',
   default: 'Ocurrió un error inesperado',
 };
+
+document.addEventListener('click', (e) => {
+  console.log('[GLOBAL CLICK]', e.target);
+});
 
 ui.loginBtn.addEventListener('click', async () => {
   const user = document.getElementById('username')?.value.trim();
@@ -37,11 +43,6 @@ ui.loginBtn.addEventListener('click', async () => {
 
     if (ui.displayUser) ui.displayUser.innerText = result.user;
 
-    if (ui.indicator)
-      ui.indicator.className =
-        'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50';
-    if (ui.statusText) ui.statusText.innerText = 'ONLINE';
-
     updateAuthUI('Sincronizando cámara...', 'text-emerald-400');
 
     await showLocalPreview();
@@ -51,8 +52,8 @@ ui.loginBtn.addEventListener('click', async () => {
         ui.overlay.classList.add('opacity-0', 'pointer-events-none');
       }
       sysLog('Dashboard listo');
-
-      activarSmartQueue();
+      initAgentStatus();
+      //activarSmartQueue();
     }, 800);
   } else {
     const friendlyError = ERROR_MAP[result.error] || ERROR_MAP.default;
@@ -63,7 +64,7 @@ ui.loginBtn.addEventListener('click', async () => {
   }
 });
 
-async function activarSmartQueue() {
+/*async function activarSmartQueue() {
   const sdk = VoxImplant.getInstance();
   const state = sdk.getClientState();
 
@@ -73,22 +74,25 @@ async function activarSmartQueue() {
   }
 
   try {
-    sysLog('Sincronizando con SmartQueues...');
+    sysLog('SmartQueue conectado. Agente OFFLINE');
 
-    await sdk.setOperatorACDStatus('READY');
+    async function activarSmartQueue() {
+      const sdk = VoxImplant.getInstance();
 
-    sysLog('Estado: ONLINE (Ready)');
-    console.log('ACD: ¡Estado READY confirmado con string hardcodeado!');
+      sysLog('SmartQueue conectado. Esperando estado real del agente...');
+      // NO forzamos estado aquí
+    }
+
 
     if (ui.indicator)
       ui.indicator.className =
         'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50';
-    if (ui.statusText) ui.statusText.innerText = 'ONLINE';
+    //if (ui.statusText) ui.statusText.innerText = 'ONLINE';
   } catch (err) {
     console.error('DETALLE ERROR ACD:', err);
     sysLog('Fallo al activar cola. Revisa el rol de Operador.', true);
   }
-}
+}*/
 
 document.getElementById('callBtn')?.addEventListener('click', () => {
   const destination = document.getElementById('callTo')?.value.trim();
