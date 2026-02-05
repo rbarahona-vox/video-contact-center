@@ -80,9 +80,10 @@ export function initAgentStatus() {
     closeStatusMenu();
     sysLog(`Estado SmartQueue: ${e.status}`);
   });
+  // ⏱️ Auto ONLINE post-login (simple y controlado)
+    setTimeout(autoOnlineAfterLogin, 2000);
+
 }
-
-
 
 /**
  * Actualiza el UI del badge superior
@@ -282,8 +283,9 @@ export async function onCallEvent(event) {
       break;
 
     case 'CALL_DISCONNECTED':
-        await syncAgentStatusFromACD();
-        break;
+      releaseForcedStatus();          // 👈 LIBERA EL ESTADO
+      await syncAgentStatusFromACD(); // 👈 pinta AfterService real
+      break;
   }
 }
 
@@ -298,4 +300,46 @@ export async function syncAgentStatusFromACD() {
 
 function normalizeStatus(status) {
   return status.replace('_', '').toUpperCase();
+}
+
+async function autoOnlineAfterLogin() {
+  try {
+    const rawStatus = await sdk.getOperatorACDStatus();
+
+    console.log('[ACD AUTOONLINE] rawStatus:', rawStatus, 'typeof:', typeof rawStatus);
+    sysLog(`Auto-online check (raw): ${rawStatus}`);
+
+    if (rawStatus === 'OFFLINE' || rawStatus === 'Offline') {
+      console.log('[ACD AUTOONLINE] ✅ Entrando al IF - intentando cambio de estado');
+      sysLog('Auto-online: intentando OFFLINE → ONLINE...');
+
+      // 🔧 FIX: Usar 'Online' capitalizado, NO 'ONLINE' en mayúsculas
+      console.log('[ACD AUTOONLINE] Llamando setOperatorACDStatus("Online")...');
+      const result = await sdk.setOperatorACDStatus('ONLINE');
+      console.log('[ACD AUTOONLINE] Resultado de setOperatorACDStatus:', result);
+
+      sysLog('Auto-online: setOperatorACDStatus(Online) RESOLVED ✅');
+
+      setTimeout(async () => {
+        try {
+          const after = await sdk.getOperatorACDStatus();
+          console.log('[ACD AUTOONLINE] after set:', after);
+          sysLog(`Auto-online: estado post-set: ${after}`);
+
+          if (after) {
+            currentStatus = after;
+            renderStatus(after);
+          }
+        } catch (e2) {
+          console.error('[ACD AUTOONLINE] Error leyendo estado post-set', e2);
+          sysLog(`Auto-online: error leyendo estado post-set: ${e2?.message || e2}`, true);
+        }
+      }, 600);
+    } else {
+      console.log('[ACD AUTOONLINE] ❌ NO entró al IF. Estado actual:', rawStatus);
+    }
+  } catch (e) {
+    console.error('[ACD AUTOONLINE] Error completo:', e);
+    sysLog(`Auto-online falló: ${e?.name || ''} ${e?.message || e}`, true);
+  }
 }
