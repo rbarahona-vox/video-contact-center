@@ -2,6 +2,8 @@
 
 import { VOX_CONFIG } from './config.js';
 import { sysLog } from './ui.js';
+import { onCallEvent } from './agentStatus.js';
+
 
 let currentCall = null;
 let isMicActive = true;
@@ -43,6 +45,7 @@ export function setupCallHandlers() {
   const sdk = VoxImplant.getInstance();
 
   sdk.on(VoxImplant.Events.IncomingCall, (e) => {
+    onCallEvent('INCOMING_CALL');
     console.log('[CALLS] ========== IncomingCall recibido ==========');
     sysLog('¡Llamada entrante detectada!');
     currentCall = e.call;
@@ -51,6 +54,7 @@ export function setupCallHandlers() {
       enabled: true,
       style: 'answer',
     });
+
     handleCallEvents(currentCall);
   });
 
@@ -139,6 +143,7 @@ function handleCallEvents(call) {
       enabled: true,
       style: 'hangup',
     });
+    onCallEvent('CALL_CONNECTED');
   });
 
   call.on(VoxImplant.CallEvents.Disconnected, () => {
@@ -150,7 +155,7 @@ function handleCallEvents(call) {
       text: 'ESPERANDO LLAMADA',
       enabled: false,
     });
-
+    onCallEvent('CALL_DISCONNECTED');
   });
 
   call.on(VoxImplant.CallEvents.Failed, (e) => {

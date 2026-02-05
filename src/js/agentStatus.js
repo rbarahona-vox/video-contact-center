@@ -3,6 +3,7 @@ import { ui, sysLog } from './ui.js';
 const sdk = VoxImplant.getInstance();
 
 let currentStatus = null;
+let forcedStatus = null;
 const ACD = VoxImplant.OperatorACDStatuses;
 
 const ACD_LABELS = {
@@ -29,11 +30,13 @@ const STATUS_TRANSITIONS = {
   ONLINE: [ACD.READY, ACD.DND, ACD.OFFLINE],
   READY: [ACD.DND, ACD.OFFLINE],
   DND: [ACD.ONLINE, ACD.OFFLINE],
-};
+  BANNED: [ACD.ONLINE],
+  AFTERSERVICE: [ACD.ONLINE]
+  };
 
 
 function getAvailableStatuses(current) {
-  const key = current.toUpperCase();
+  const key = normalizeStatus(current);
   return STATUS_TRANSITIONS[key] || [];
 }
 
@@ -41,7 +44,6 @@ function getAvailableStatuses(current) {
 const AUTO_STATUSES = [
   ACD.DIALING,
   ACD.INSERVICE,
-  ACD.AFTERSERVICE,
   ACD.BANNED,
 ];
 
@@ -86,6 +88,7 @@ export function initAgentStatus() {
  * Actualiza el UI del badge superior
  */
 function renderStatus(status) {
+  const effectiveStatus = forcedStatus || status;
   if (!ui.statusText || !ui.indicator) return;
 
     ui.statusText.innerText = ACD_LABELS[status] || status;
@@ -254,4 +257,45 @@ async function changeStatus(next) {
     console.error('Error cambiando estado:', e);
     sysLog(`No se pudo cambiar a ${next}`, true);
   }
+}
+
+export function forceAgentStatus(status) {
+  forcedStatus = status;
+  renderStatus(status);
+}
+
+export function releaseForcedStatus() {
+  forcedStatus = null;
+  renderStatus(currentStatus);
+}
+
+export async function onCallEvent(event) {
+  console.log('[ACD EVENT]', event);
+
+  switch (event) {
+    case 'INCOMING_CALL':
+      forceAgentStatus('DIALING');
+      break;
+
+    case 'CALL_CONNECTED':
+      forceAgentStatus('INSERVICE');
+      break;
+
+    case 'CALL_DISCONNECTED':
+        await syncAgentStatusFromACD();
+        break;
+  }
+}
+
+export async function syncAgentStatusFromACD() {
+  const status = await sdk.getOperatorACDStatus();
+  if (status) {
+    currentStatus = status;
+    renderStatus(status);
+    sysLog(`Estado SmartQueue sincronizado: ${status}`);
+  }
+}
+
+function normalizeStatus(status) {
+  return status.replace('_', '').toUpperCase();
 }
