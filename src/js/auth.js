@@ -1,5 +1,3 @@
-// src/js/auth.js
-
 import { VOX_CONFIG } from './config.js';
 import { sysLog } from './ui.js';
 
@@ -12,9 +10,6 @@ export async function loginProcess(userAlias, password) {
     let currentState = sdk.getClientState();
     sysLog(`Estado actual: ${currentState}`);
     
- 
-    // 1. INICIALIZACIÓN
-
     if (currentState === null || currentState === 'DISCONNECTED') {
       sysLog('Inicializando SDK para SmartQueue...');
       await sdk.init({
@@ -26,7 +21,6 @@ export async function loginProcess(userAlias, password) {
       });
     }
 
-    // 2. CONEXIÓN AL NODO
     currentState = sdk.getClientState();
     if (
       currentState !== 'CONNECTED' &&
@@ -37,7 +31,6 @@ export async function loginProcess(userAlias, password) {
       await sdk.connect();
     }
 
-    // 3. AUTENTICACIÓN
     sysLog(`Autenticando: ${userAlias}...`);
     await sdk.login(fullUsername, password);
 

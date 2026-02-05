@@ -1,4 +1,3 @@
-// js/calls.js - VERSIÓN CON CAMBIOS MÍNIMOS
 
 import { VOX_CONFIG } from './config.js';
 import { sysLog } from './ui.js';
@@ -16,28 +15,15 @@ function updateCallButton({ text, enabled, style }) {
   btn.innerText = text;
   btn.disabled = !enabled;
 
-  // Reset clases base
   btn.className =
     'px-10 py-3.5 rounded-2xl font-bold tracking-widest transition-all shadow-lg active:scale-95';
 
   if (!enabled) {
-    btn.classList.add(
-      'bg-slate-700',
-      'text-slate-400',
-      'cursor-not-allowed'
-    );
+    btn.classList.add('bg-slate-700', 'text-slate-400', 'cursor-not-allowed');
   } else if (style === 'answer') {
-    btn.classList.add(
-      'bg-emerald-600',
-      'hover:bg-emerald-500',
-      'text-white'
-    );
+    btn.classList.add('bg-emerald-600', 'hover:bg-emerald-500', 'text-white');
   } else if (style === 'hangup') {
-    btn.classList.add(
-      'bg-rose-600',
-      'hover:bg-rose-500',
-      'text-white'
-    );
+    btn.classList.add('bg-rose-600', 'hover:bg-rose-500', 'text-white');
   }
 }
 
@@ -71,44 +57,20 @@ function handleCallEvents(call) {
 
   console.log('[CALLS] handleCallEvents inicializado');
 
-  // LocalVideoStreamAdded: MI video → debe ir al PIP PEQUEÑO (remoteVideoContainer)
   call.on(VoxImplant.CallEvents.LocalVideoStreamAdded, (event) => {
-    console.log('[CALLS] 📷📷📷 LocalVideoStreamAdded - MI VIDEO 📷📷📷');
-    
-    const pipContainer = document.getElementById('remoteVideoContainer');
-    if (pipContainer) {
-      pipContainer.innerHTML = '';
-      event.videoStream.render(pipContainer);
-      console.log('[CALLS] ✅ Video LOCAL renderizado en remoteVideoContainer (PIP)');
-      sysLog('📷 Mi video activo');
-      
-      // Forzar estilo
-      setTimeout(() => {
-        const video = pipContainer.querySelector('video');
-        if (video) {
-          video.style.cssText = `
-            width: 100% !important;
-            height: 100% !important;
-            object-fit: cover !important;
-            position: relative !important;
-          `;
-        }
-      }, 100);
-    }
+    console.log('[CALLS] 📷 LocalVideoStreamAdded - IGNORADO (preview permanente activo)');
   });
 
-  // RemoteVideoStreamAdded: video del CLIENTE → debe ir a PANTALLA GRANDE (localVideoContainer)
   call.on(VoxImplant.CallEvents.RemoteVideoStreamAdded, (event) => {
-    console.log('[CALLS] 🎥🎥🎥 RemoteVideoStreamAdded - VIDEO DEL CLIENTE 🎥🎥🎥');
+    console.log('[CALLS] 🎥 RemoteVideoStreamAdded - VIDEO DEL CLIENTE');
     
     const mainContainer = document.getElementById('localVideoContainer');
     if (mainContainer) {
       mainContainer.innerHTML = '';
       event.videoStream.render(mainContainer);
-      console.log('[CALLS] ✅ Video REMOTO renderizado en localVideoContainer (GRANDE)');
+      console.log('[CALLS] ✅ Video REMOTO en localVideoContainer (GRANDE)');
       sysLog('🎥 Video del cliente activo');
       
-      // Forzar estilo
       setTimeout(() => {
         const video = mainContainer.querySelector('video');
         if (video) {
@@ -150,13 +112,14 @@ function handleCallEvents(call) {
     console.log('[CALLS] Disconnected');
     sysLog('Llamada finalizada');
     currentCall = null;
+    
+    await onCallEvent('CALL_DISCONNECTED');
     resetUI();
-    // 🔥 CAMBIO 1: NO llamar restoreLocalPreview - el video ya está ahí
+    
     updateCallButton({
       text: 'ESPERANDO LLAMADA',
       enabled: false,
     });
-    onCallEvent('CALL_DISCONNECTED');
   });
 
   call.on(VoxImplant.CallEvents.Failed, (e) => {
@@ -186,9 +149,6 @@ function attachEndpointHandlers(endpoint) {
   });
 }
 
-/**
- * Busca videos huérfanos y los mueve a sus contenedores
- */
 function relocateOrphanVideos() {
   const allVideos = document.querySelectorAll('video');
   const pipContainer = document.getElementById('remoteVideoContainer');
@@ -203,14 +163,8 @@ function relocateOrphanVideos() {
     const inPip = pipContainer.contains(video);
     const inMain = mainContainer.contains(video);
 
-    // Si el video está huérfano (fuera de ambos contenedores)
     if (!inPip && !inMain) {
-      console.warn('[CALLS] 🚨 VIDEO HUÉRFANO DETECTADO 🚨');
-      console.log('[CALLS] Videos en PIP:', videosInPip, 'Videos en Main:', videosInMain);
-      
-      // Si no hay videos en el PIP, este huérfano va ahí (es el preview o video local)
       if (videosInPip === 0) {
-        console.log('[CALLS] ➡️ Moviendo huérfano a PIP (remoteVideoContainer)');
         pipContainer.appendChild(video);
         video.style.cssText = `
           width: 100% !important;
@@ -218,10 +172,7 @@ function relocateOrphanVideos() {
           object-fit: cover !important;
           position: relative !important;
         `;
-      }
-      // Si no hay videos en la pantalla principal, este huérfano va ahí
-      else if (videosInMain === 0) {
-        console.log('[CALLS] ➡️ Moviendo huérfano a PANTALLA GRANDE (localVideoContainer)');
+      } else if (videosInMain === 0) {
         mainContainer.appendChild(video);
         video.style.cssText = `
           width: 100% !important;
@@ -229,10 +180,7 @@ function relocateOrphanVideos() {
           object-fit: cover !important;
           position: relative !important;
         `;
-      }
-      // Si ambos contenedores ya tienen video, eliminamos el huérfano
-      else {
-        console.log('[CALLS] 🗑️ Eliminando video huérfano redundante');
+      } else {
         video.remove();
       }
     }
@@ -278,7 +226,6 @@ export function toggleLocalAudio() {
   isMicActive = !isMicActive;
 
   try {
-    // Buscar cualquier video local (preview o en llamada)
     const video = document.querySelector('video');
     if (!video || !video.srcObject) return isMicActive;
 
@@ -312,9 +259,7 @@ export function toggleLocalVideo() {
 
 function resetUI() {
   const mainContainer = document.getElementById('localVideoContainer');
-  const pipContainer = document.getElementById('remoteVideoContainer');
 
-  // 🔥 CAMBIO 2: Solo limpiar la pantalla grande
   if (mainContainer) {
     mainContainer.innerHTML = `
       <div class="text-center flex items-center justify-center h-full">
@@ -326,20 +271,4 @@ function resetUI() {
         </div>
       </div>`;
   }
-
-  // 🔥 CAMBIO 3: NO tocar pipContainer - dejar el video local intacto
-  // REMOVIDO: pipContainer.innerHTML = ...
-
-  // 🔥 CAMBIO 4: NO eliminar videos del PIP
-  const allVideos = document.querySelectorAll('video');
-  allVideos.forEach(video => {
-    // Solo eliminar si está huérfano Y no está en el PIP
-    if (!mainContainer.contains(video) && !pipContainer.contains(video)) {
-      console.log('[CALLS] Removiendo video huérfano en reset');
-      video.remove();
-    }
-  });
 }
-
-// 🔥 CAMBIO 5: ELIMINAR esta función completamente
-// async function restoreLocalPreview() { ... }

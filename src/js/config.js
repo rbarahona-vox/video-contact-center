@@ -1,4 +1,3 @@
-// js/config.js - ACTUALIZADO
 export const VOX_CONFIG = {
   ACCOUNT_NODE: VoxImplant.ConnectionNode.NODE_2,
   APP_DOMAIN: 'video-contact-center.rbarahona.n2.voximplant.com',

@@ -47,14 +47,8 @@ const AUTO_STATUSES = [
   ACD.BANNED,
 ];
 
-/**
- * Inicializa listeners de estado ACD
- */
 export function initAgentStatus() {
-  // 1️⃣ Inicializar UI y listeners SIEMPRE
   makeStatusClickable();
-
-  // 2️⃣ Intentar obtener estado ACD cuando esté listo
   sdk.getOperatorACDStatus()
     .then((initialStatus) => {
       if (initialStatus) {
@@ -73,20 +67,15 @@ export function initAgentStatus() {
       renderStatus(ACD.OFFLINE);
     });
 
-  // 3️⃣ Escuchar cambios reales posteriores
   sdk.on(VoxImplant.Events.OperatorACDStatusChanged, (e) => {
     currentStatus = e.status;
     renderStatus(e.status);
     closeStatusMenu();
     sysLog(`Estado SmartQueue: ${e.status}`);
   });
-  // ⏱️ Auto ONLINE post-login (simple y controlado)
   setTimeout(autoOnlineAfterLogin, 2000);
 }
 
-/**
- * Actualiza el UI del badge superior
- */
 function renderStatus(status) {
   const effectiveStatus = forcedStatus || status;
   if (!ui.statusText || !ui.indicator) return;
@@ -126,10 +115,6 @@ function renderStatus(status) {
   }
 }
 
-
-/**
- * Convierte el badge en botón con restricciones
- */
 function makeStatusClickable() {
   console.log('[ACD] makeStatusClickable inicializado');
 
@@ -182,7 +167,6 @@ function makeStatusClickable() {
 
     if (!menu) return;
 
-    // Si el click fue dentro del badge o del menú, NO cerrar
     if (container.contains(e.target) || menu.contains(e.target)) {
       return;
     }
@@ -245,7 +229,6 @@ async function changeStatus(next) {
     await sdk.setOperatorACDStatus(
       typeof next === 'string' ? next.toUpperCase() : String(next).toUpperCase()
     );
-    // WebSDK v4 → repaint inmediato
     currentStatus = next;
     renderStatus(next);
 
@@ -279,23 +262,30 @@ export async function onCallEvent(event) {
       break;
 
     case 'CALL_DISCONNECTED':
-      // 🔥 FIX: Sincronizar PRIMERO, LUEGO liberar el forced status
+      console.log('[ACD EVENT] Esperando 800ms para que el backend actualice el estado...');
+      await new Promise(resolve => setTimeout(resolve, 800));
       await syncAgentStatusFromACD();
-      forcedStatus = null; // Liberar sin re-renderizar con estado viejo
-      renderStatus(currentStatus); // Ahora currentStatus ya está actualizado
+      forcedStatus = null;
+      
+      renderStatus(currentStatus);
+      console.log('[ACD EVENT] Estado final después de disconnected:', currentStatus);
       break;
   }
 }
 
 export async function syncAgentStatusFromACD() {
   try {
+    console.log('[ACD SYNC] Solicitando estado al backend...');
     const status = await sdk.getOperatorACDStatus();
     console.log('[ACD SYNC] Estado obtenido del backend:', status);
+    console.log('[ACD SYNC] Tipo de estado:', typeof status);
+    console.log('[ACD SYNC] Estado normalizado:', normalizeStatus(status));
     
     if (status) {
       currentStatus = status;
-      // NO renderizar aquí - dejar que onCallEvent lo haga
       sysLog(`Estado SmartQueue sincronizado: ${status}`);
+    } else {
+      console.warn('[ACD SYNC] Estado recibido es null/undefined');
     }
   } catch (e) {
     console.error('[ACD SYNC] Error:', e);

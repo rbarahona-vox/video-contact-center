@@ -1,5 +1,3 @@
-// js/main.js
-
 import { loginProcess } from './auth.js';
 import { ui, sysLog, updateAuthUI } from './ui.js';
 import { showLocalPreview } from './media.js';
@@ -53,7 +51,6 @@ ui.loginBtn.addEventListener('click', async () => {
       }
       sysLog('Dashboard listo');
       initAgentStatus();
-      //activarSmartQueue();
     }, 800);
   } else {
     const friendlyError = ERROR_MAP[result.error] || ERROR_MAP.default;
@@ -64,47 +61,15 @@ ui.loginBtn.addEventListener('click', async () => {
   }
 });
 
-/*async function activarSmartQueue() {
-  const sdk = VoxImplant.getInstance();
-  const state = sdk.getClientState();
-
-  if (state !== 'LOGGED_IN' && state !== 'CONNECTED') {
-    setTimeout(activarSmartQueue, 2000);
-    return;
-  }
-
-  try {
-    sysLog('SmartQueue conectado. Agente OFFLINE');
-
-    async function activarSmartQueue() {
-      const sdk = VoxImplant.getInstance();
-
-      sysLog('SmartQueue conectado. Esperando estado real del agente...');
-      // NO forzamos estado aquí
-    }
-
-
-    if (ui.indicator)
-      ui.indicator.className =
-        'w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50';
-    //if (ui.statusText) ui.statusText.innerText = 'ONLINE';
-  } catch (err) {
-    console.error('DETALLE ERROR ACD:', err);
-    sysLog('Fallo al activar cola. Revisa el rol de Operador.', true);
-  }
-}*/
 
 document.getElementById('callBtn')?.addEventListener('click', () => {
   const destination = document.getElementById('callTo')?.value.trim();
   toggleCall(destination);
 });
 
-// CORREGIDO: Toggle del micrófono con indicador visual correcto
 document.getElementById('toggleMic')?.addEventListener('click', (e) => {
   const isActive = toggleLocalAudio();
   
-  // Si el micrófono está ACTIVO → fondo normal (slate-800)
-  // Si el micrófono está SILENCIADO → fondo rojo (rose-600)
   if (isActive) {
     e.currentTarget.classList.remove('bg-rose-600');
     e.currentTarget.classList.add('bg-slate-800');
